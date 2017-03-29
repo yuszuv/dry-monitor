@@ -69,8 +69,9 @@ module Dry
         end
 
         def log_request_params(request)
-          with_http_params(request[QUERY_PARAMS]) do |params|
-            info QUERY_MSG % [params.inspect]
+          with_http_params(request) do |query_params, body|
+            info QUERY_MSG % [query_params.inspect]
+            info PARAMS_MSG % [body.inspect]
           end
         end
 
@@ -79,15 +80,16 @@ module Dry
         end
 
         def with_http_params(params)
-          params = ::Rack::Utils.parse_nested_query(params)
-          if params.size > 0
-            yield(filter_params(params))
+          req = ::Rack::Request.new(params)
+          if req.params.size > 0
+            yield( [req.GET, req.POST].map(&method(:filter_params)) )
           end
         end
 
         def filter_backtrace(backtrace, app_name)
           # TODO: what do we want to do with this?
-          backtrace.reject { |l| l.include?('gems') }
+          # backtrace.reject { |l| l.include?('gems') }
+          backtrace
         end
 
         def filter_params(params)

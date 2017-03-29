@@ -36,6 +36,9 @@ module Dry
           response, time = CLOCK.measure { app.call(env) }
           notifications.stop(REQUEST_STOP, env: env, time: time, status: response[0])
           response
+        rescue Exception => e
+          notifications.instrument(REQUEST_ERROR, exception: e)
+          raise e
         end
       end
     end
